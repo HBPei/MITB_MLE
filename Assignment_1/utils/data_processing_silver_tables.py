@@ -158,7 +158,7 @@ def process_silver_table_main(bronze_lms_directory, silver_attributes_daily_dire
 }
     
     # Columns requiring the same cleaning
-    columns_to_clean = ["Annual_Income", "Num_of_Loan","Num_of_Delayed_Payment","Outstanding_Debt","Amount_invested_monthly","Monthly_Balance"]
+    columns_to_clean = ["Annual_Income", "Num_of_Loan","Num_of_Delayed_Payment","Outstanding_Debt","Amount_invested_monthly","Monthly_Balance","Changed_Credit_Limit"]
 
     # Clean columns
     for column in columns_to_clean:
@@ -324,6 +324,8 @@ def process_silver_table_main(bronze_lms_directory, silver_attributes_daily_dire
     for column, new_type in column_type_map.items():
         clickstream_df = clickstream_df.withColumn(column, col(column).cast(new_type))
 
+    clickstream_df = clickstream_df.withColumnRenamed("snapshot_date", "clicks_snapshot_date")
+
     # save silver table - IRL connect to database to write
     silver_clickstream_name = "silver_clickstream_main_"+ '.parquet'
     silver_clickstream_filepath = silver_clickstream_directory + silver_clickstream_name
@@ -342,7 +344,8 @@ def process_silver_table_main(bronze_lms_directory, silver_attributes_daily_dire
 
 def augment_silver_table_main(silver_lms_directory, silver_merged_processed_directory, spark, 
                             silver_attribute_filename, silver_financial_filename, gold_loan_filename, silver_clickstream_filename,gold_features_main_directory,
-                            train_end_date, unseen_start_date,data_start_date_str,data_end_date_str):
+                            train_end_date, unseen_start_date,data_start_date_str,data_end_date_str,
+                            model_train_date_str=None, validation_period_months=1, test_period_months=2, oot_period_months=2):
 
     # loading the dataframes from the silver tables
     attribute_main_filepath = silver_lms_directory + silver_attribute_filename
@@ -394,90 +397,115 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
 
     loan_df = loan_df.withColumnRenamed("snapshot_date", "labels_snapshot_date")
 
-    clickstream_df = clickstream_df.withColumnRenamed("snapshot_date", "clicks_snapshot_date")
+    # clickstream_df = clickstream_df.withColumnRenamed("snapshot_date", "clicks_snapshot_date")
 
     # merging the dataframes on Customer_ID and selecting relevant columns
 
-    label_cs = (
-    loan_df.select(
-        "loan_id",
-        "Customer_ID",
-        "label",
-        "labels_snapshot_date"
-    )
-    .alias("l").join(
-        clickstream_df.alias("c"),
-        on=(
-            (F.col("l.Customer_ID") == F.col("c.Customer_ID")) &
-            (F.col("l.labels_snapshot_date") == F.col("c.clicks_snapshot_date"))
-        ),
-        how="left"
-    ).select(
-        "l.*",
-        *[
-            F.col(f"c.{col}")
-            for col in clickstream_df.columns
-            if col not in ["Customer_ID", "clicks_snapshot_date"]
-        ]
-    )
-)
+#     label_cs = (
+#     loan_df.select(
+#         "loan_id",
+#         "Customer_ID",
+#         "label",
+#         "labels_snapshot_date"
+#     )
+#     .alias("l").join(
+#         clickstream_df.alias("c"),
+#         on=(
+#             (F.col("l.Customer_ID") == F.col("c.Customer_ID")) &
+#             (F.col("l.labels_snapshot_date") == F.col("c.clicks_snapshot_date"))
+#         ),
+#         how="left"
+#     ).select(
+#         "l.*",
+#         *[
+#             F.col(f"c.{col}")
+#             for col in clickstream_df.columns
+#             if col not in ["Customer_ID", "clicks_snapshot_date"]
+#         ]
+#     )
+# )
 
-    combined_df = (
-        label_cs
-        .join(attribute_df.select("Customer_ID","Age","Occupation","attributes_snapshot_date"),
-        on="Customer_ID",how="left")
-        .join(financial_df,on="Customer_ID",how="left"))
+#     combined_df = (
+#         label_cs
+#         .join(attribute_df.select("Customer_ID","Age","Occupation","attributes_snapshot_date"),
+#         on="Customer_ID",how="left")
+#         .join(financial_df,on="Customer_ID",how="left"))
     
 
-    # combined_df = (
-    # loan_df.select("loan_id","Customer_ID","label","labels_snapshot_date")
-    # .join(attribute_df.select("Customer_ID","Age","Occupation","attributes_snapshot_date"),
-    # on="Customer_ID",how="left")
-    # .join(financial_df,on="Customer_ID",how="left"))
+    combined_df = (
+    loan_df.select("loan_id","Customer_ID","label","labels_snapshot_date")
+    .join(attribute_df.select("Customer_ID","Age","Occupation","attributes_snapshot_date"),
+    on="Customer_ID",how="left")
+    .join(financial_df,on="Customer_ID",how="left"))
 
     # c = combined_df.alias("c")
     # cl = clickstream_df.alias("cl")
 
-    # combined_df = (c.join(cl,
-    #         on=(
-    #             (F.col("c.Customer_ID") == F.col("cl.Customer_ID")) &
-    #             (F.col("c.labels_snapshot_date") == F.col("cl.clicks_snapshot_date"))
-    #         ),how="left").select(
-    #         "c.*",
-    #         *[
-    #             F.col(f"cl.{col}")
-    #             for col in clickstream_df.columns
-    #             if col not in ["Customer_ID", "clicks_snapshot_date"]
-    #         ]))
 
 
-    # filtering the combined dataframe into train and unseen based on the labels_snapshot_date for imputation
+
+    # ============================================================
+    # CHRONOLOGICAL TRAIN / VALIDATION / TEST / OOT SPLIT
+    # ============================================================
+    # model_train_date_str is the day after the last available snapshot.
+    # Example cutoff 2025-02-01, with 4 OOT months, 3 test months,
+    # and 3 validation months gives:
+    # Train: Jan 2023-Mar 2024 (assuming data starts Jan 2023)
+    # Validation: Apr-Jun 2024
+    # Test: Jul-Sep 2024
+    # OOT: Oct 2024-Jan 2025
+    if model_train_date_str is not None:
+        model_train_date = datetime.strptime(model_train_date_str, "%Y-%m-%d").date()
+        oot_end_date = model_train_date - timedelta(days=1)
+        oot_start_date = model_train_date - relativedelta(months=oot_period_months)
+    else:
+        # Backward-compatible fallback when no model cutoff is supplied.
+        oot_start_date = datetime.strptime(str(unseen_start_date)[:10], "%Y-%m-%d").date()
+        oot_end_date = datetime.strptime(data_end_date_str, "%Y-%m-%d").date()
+
+    # Work backwards from OOT to define test, validation, then train.
+    test_end_date = oot_start_date - timedelta(days=1)
+    test_start_date = test_end_date - relativedelta(months=test_period_months) + timedelta(days=1)
+    validation_end_date = test_start_date - timedelta(days=1)
+    validation_start_date = validation_end_date - relativedelta(months=validation_period_months) + timedelta(days=1)
+    train_start_date_effective = datetime.strptime(data_start_date_str, "%Y-%m-%d").date()
+    train_end_date_effective = validation_start_date - timedelta(days=1)
+
+    print("\nDate split boundaries:")
+    print("Train:", train_start_date_effective, "to", train_end_date_effective)
+    print("Validation:", validation_start_date, "to", validation_end_date)
+    print("Test:", test_start_date, "to", test_end_date)
+    print("OOT:", oot_start_date, "to", oot_end_date)
 
     train = combined_df.filter(
-        F.col("labels_snapshot_date") <=lit(train_end_date)
+        (F.col("labels_snapshot_date") >= F.lit(train_start_date_effective)) &
+        (F.col("labels_snapshot_date") <= F.lit(train_end_date_effective))
     )
-
+    validation = combined_df.filter(
+        (F.col("labels_snapshot_date") >= F.lit(validation_start_date)) &
+        (F.col("labels_snapshot_date") <= F.lit(validation_end_date))
+    )
+    test = combined_df.filter(
+        (F.col("labels_snapshot_date") >= F.lit(test_start_date)) &
+        (F.col("labels_snapshot_date") <= F.lit(test_end_date))
+    )
     unseen = combined_df.filter(
-        F.col("labels_snapshot_date") >= lit(unseen_start_date)
+        (F.col("labels_snapshot_date") >= F.lit(oot_start_date)) &
+        (F.col("labels_snapshot_date") <= F.lit(oot_end_date))
     )
 
-    train_count = train.count()
-    unseen_count = unseen.count()
-
-    print("Train:", train_count)
-    print("Unseen:", unseen_count)
-
-    print("Train label counts:")
-
-    train_label_counts = (train.groupBy("label").count().withColumn("proportion",col("count") / train_count).orderBy("label"))
-
-    train_label_counts.show()
-
-    print("Unseen label counts:")
-
-    unseen_label_counts = (unseen.groupBy("label").count().withColumn("proportion",col("count") / unseen_count).orderBy("label"))
-
-    unseen_label_counts.show()
+    for split_name, split_df in [
+        ("Train", train), ("Validation", validation), ("Test", test), ("OOT", unseen)
+    ]:
+        split_count = split_df.count()
+        print(f"\n{split_name}: {split_count} rows")
+        split_df.groupBy("label").count().withColumn(
+            "proportion", F.col("count") / F.lit(split_count if split_count else 1)
+        ).orderBy("label").show()
+        split_df.select(
+            F.min("labels_snapshot_date").alias("min_date"),
+            F.max("labels_snapshot_date").alias("max_date")
+        ).show()
 
     #  Age Imputation
 
@@ -1012,6 +1040,26 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
         min_distance_gap=MIN_DISTANCE_GAP
     )
 
+    validation_processed = transform_age_spark(
+        validation,
+        age_income_lookup=age_income_lookup,
+        occupation_median=occupation_median,
+        overall_median=overall_median,
+        age_edges_final=age_edges_final,
+        age_labels_final=age_labels_final,
+        min_distance_gap=MIN_DISTANCE_GAP
+    )
+
+    test_processed = transform_age_spark(
+        test,
+        age_income_lookup=age_income_lookup,
+        occupation_median=occupation_median,
+        overall_median=overall_median,
+        age_edges_final=age_edges_final,
+        age_labels_final=age_labels_final,
+        min_distance_gap=MIN_DISTANCE_GAP
+    )
+
     # CHECK RESULTS
 
 
@@ -1025,8 +1073,15 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
     train_processed.groupBy("Age_Bin").count().orderBy("Age_Bin").show()
 
 
-    print("UNSEEN")
-    print("=======")
+    print("VALIDATION")
+    print("=================")
+
+    print("Total rows:", validation_processed.count())
+    validation_processed.groupBy("Age_imputation_method").count().orderBy("Age_imputation_method").show()
+    validation_processed.groupBy("Age_Bin").count().orderBy("Age_Bin").show()
+
+    print("UNSEEN / OOT")
+    print("============")
 
     print("Total rows:", unseen_processed.count())
 
@@ -1329,6 +1384,56 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
         card_overall_median
     )
 
+    # IMPUTE TEST USING TRAIN-DERIVED PARAMETERS
+    validation_processed = transform_account_count(
+        validation_processed,
+        "Num_Bank_Accounts",
+        "Bank_Accounts_clean",
+        "Bank_Accounts_imputed",
+        "Bank_Accounts_imputation_method",
+        bank_p95,
+        bank_group_stats,
+        bank_occupation_median,
+        bank_overall_median
+    )
+
+    validation_processed = transform_account_count(
+        validation_processed,
+        "Num_Credit_Card",
+        "Credit_Cards_clean",
+        "Credit_Cards_imputed",
+        "Credit_Cards_imputation_method",
+        card_p95,
+        card_group_stats,
+        card_occupation_median,
+        card_overall_median
+    )
+
+
+    # IMPUTE TEST USING TRAIN-DERIVED PARAMETERS
+    test_processed = transform_account_count(
+        test_processed,
+        "Num_Bank_Accounts",
+        "Bank_Accounts_clean",
+        "Bank_Accounts_imputed",
+        "Bank_Accounts_imputation_method",
+        bank_p95,
+        bank_group_stats,
+        bank_occupation_median,
+        bank_overall_median
+    )
+    test_processed = transform_account_count(
+        test_processed,
+        "Num_Credit_Card",
+        "Credit_Cards_clean",
+        "Credit_Cards_imputed",
+        "Credit_Cards_imputation_method",
+        card_p95,
+        card_group_stats,
+        card_occupation_median,
+        card_overall_median
+    )
+
 
   
     # FIT FINAL QUARTILE BINS FROM TRAIN
@@ -1409,6 +1514,38 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
         "Credit_Cards_Imputed_Bin"
     )
 
+    validation_processed = create_age_bin_column(
+        validation_processed,
+        "Bank_Accounts_imputed",
+        bank_account_edges,
+        bank_account_labels,
+        "Bank_Accounts_Imputed_Bin"
+    )
+
+    validation_processed = create_age_bin_column(
+        validation_processed,
+        "Credit_Cards_imputed",
+        credit_card_edges,
+        credit_card_labels,
+        "Credit_Cards_Imputed_Bin"
+    )
+
+
+    test_processed = create_age_bin_column(
+        test_processed,
+        "Bank_Accounts_imputed",
+        bank_account_edges,
+        bank_account_labels,
+        "Bank_Accounts_Imputed_Bin"
+    )
+    test_processed = create_age_bin_column(
+        test_processed,
+        "Credit_Cards_imputed",
+        credit_card_edges,
+        credit_card_labels,
+        "Credit_Cards_Imputed_Bin"
+    )
+
 
     # SAMPLE OUTPUT - BANK ACCOUNTS & CREDIT CARDS
 
@@ -1430,6 +1567,7 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
     ).show(20, truncate=False)
 
 
+
     unseen_processed.select(
         "Customer_ID",
         "Num_Bank_Accounts",
@@ -1446,12 +1584,54 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
         "Credit_Cards_imputation_method"
     ).show(20, truncate=False)
 
+    validation_processed.select(
+        "Customer_ID", "Age", "Age_imputed", "Age_Bin",
+        "Num_Bank_Accounts", "Bank_Accounts_imputed", "Bank_Accounts_Imputed_Bin",
+        "Num_Credit_Card", "Credit_Cards_imputed", "Credit_Cards_Imputed_Bin"
+    ).show(20, truncate=False)
+
+
+    test_processed.select(
+        "Customer_ID", "Age", "Age_imputed", "Age_Bin",
+        "Num_Bank_Accounts", "Bank_Accounts_imputed", "Bank_Accounts_Imputed_Bin",
+        "Num_Credit_Card", "Credit_Cards_imputed", "Credit_Cards_Imputed_Bin"
+    ).show(20, truncate=False)
+
+    train_processed = train_processed.withColumn(
+    "Num_Fin_Pdts",
+    F.col("Num_Bank_Accounts") +
+    F.col("Num_Credit_Card") +
+    F.col("Num_of_Loan_Cleaned"))
+
+    unseen_processed = unseen_processed.withColumn(
+        "Num_Fin_Pdts",
+        F.col("Num_Bank_Accounts") +
+        F.col("Num_Credit_Card") +
+        F.col("Num_of_Loan_Cleaned"))
+
+    validation_processed = validation_processed.withColumn(
+        "Num_Fin_Pdts",
+        F.col("Num_Bank_Accounts") +
+        F.col("Num_Credit_Card") +
+        F.col("Num_of_Loan_Cleaned"))
+
+
+    test_processed = test_processed.withColumn(
+        "Num_Fin_Pdts",
+        F.col("Num_Bank_Accounts") +
+        F.col("Num_Credit_Card") +
+        F.col("Num_of_Loan_Cleaned"))
+    
+
 
     # ============================================================
     # 1. Debt per Credit Account
     # ============================================================
-    train_processed_1 = train_processed.copy()
-    unseen_processed_1 = unseen_processed.copy()
+    # Spark DataFrames are immutable; assigning references is sufficient.
+    train_processed_1 = train_processed
+    validation_processed_1 = validation_processed
+    unseen_processed_1 = unseen_processed
+    test_processed_1 = test_processed
 
     train_processed_1 = train_processed_1.withColumn(
         "Debt_per_Credit_Account",
@@ -1478,6 +1658,24 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
                 )
             ).otherwise(None)
         )
+
+    validation_processed_1 = validation_processed_1.withColumn(
+        "Debt_per_Credit_Account",
+        F.when(
+            F.col("Bank_Accounts_clean") + F.col("Credit_Cards_clean") != 0,
+            F.col("Outstanding_Debt") /
+            (F.col("Bank_Accounts_clean") + F.col("Credit_Cards_clean"))
+        ).otherwise(None)
+    )
+
+    test_processed_1 = test_processed_1.withColumn(
+        "Debt_per_Credit_Account",
+        F.when(
+            F.col("Bank_Accounts_clean") + F.col("Credit_Cards_clean") != 0,
+            F.col("Outstanding_Debt") /
+            (F.col("Bank_Accounts_clean") + F.col("Credit_Cards_clean"))
+        ).otherwise(None)
+    )
     
 
 
@@ -1503,6 +1701,22 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
             ).otherwise(None)
         )
 
+    validation_processed_1 = validation_processed_1.withColumn(
+        "Delayed_Payments_per_Card",
+        F.when(
+            F.col("Credit_Cards_clean") != 0,
+            F.col("Num_of_Delayed_Payment") / F.col("Credit_Cards_clean")
+        ).otherwise(None)
+    )
+
+    test_processed_1 = test_processed_1.withColumn(
+        "Delayed_Payments_per_Card",
+        F.when(
+            F.col("Credit_Cards_clean") != 0,
+            F.col("Num_of_Delayed_Payment") / F.col("Credit_Cards_clean")
+        ).otherwise(None)
+    )
+
 
     # ============================================================
     # 3. Interest Rate × Debt
@@ -1520,7 +1734,24 @@ def augment_silver_table_main(silver_lms_directory, silver_merged_processed_dire
             F.col("Outstanding_Debt")
         )
 
-    features_df = train_processed_1.unionByName(unseen_processed_1)
+    validation_processed_1 = validation_processed_1.withColumn(
+        "InterestRate_x_Debt",
+        F.col("Interest_Rate") * F.col("Outstanding_Debt")
+    )
+
+    test_processed_1 = test_processed_1.withColumn(
+        "InterestRate_x_Debt",
+        F.col("Interest_Rate") * F.col("Outstanding_Debt")
+    )
+
+    # Store all partitions together; use labels_snapshot_date to separate them
+    # again for model fitting, validation, and OOT evaluation.
+    features_df = (
+        train_processed_1
+        .unionByName(validation_processed_1)
+        .unionByName(test_processed_1)
+        .unionByName(unseen_processed_1)
+    )
 
     features_main_name = "gold_feature_store_main_"+ '.parquet'
     features_filepath = gold_features_main_directory + features_main_name
