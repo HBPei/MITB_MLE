@@ -1,0 +1,505 @@
+{
+  "selection_metric": "gini_test",
+  "governance": {
+    "min_label_months": 11,
+    "refresh_every_months": 6,
+    "min_months_between_training": 2,
+    "min_gini_gate": 0.3,
+    "max_test_oot_gini_gap": 0.1,
+    "promotion_min_uplift": 0.0
+  },
+  "models": {
+    "credit_model_logreg_2025_06_01": {
+      "file": "credit_model_logreg_2025_06_01.pkl",
+      "algo": "logreg",
+      "model_train_date": "2025-06-01",
+      "trained_as_of": "2025-06-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.2936987666555856,
+      "results": {
+        "auc_train": 0.7539,
+        "auc_validation": 0.7291,
+        "auc_test": 0.7498,
+        "auc_oot": 0.7615,
+        "gini_train": 0.508,
+        "gini_validation": 0.458,
+        "gini_test": 0.5,
+        "gini_oot": 0.523,
+        "ks_train": 0.448,
+        "ks_validation": 0.415,
+        "ks_test": 0.441,
+        "ks_oot": 0.493
+      }
+    },
+    "credit_model_xgb_2025_06_01": {
+      "file": "credit_model_xgb_2025_06_01.pkl",
+      "algo": "xgb",
+      "model_train_date": "2025-06-01",
+      "trained_as_of": "2025-06-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Debt_per_Credit_Account",
+        "Annual_Income",
+        "Num_Fin_Pdts",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.23062056303024292,
+      "results": {
+        "auc_train": 0.7893,
+        "auc_validation": 0.787,
+        "auc_test": 0.7789,
+        "auc_oot": 0.7875,
+        "gini_train": 0.579,
+        "gini_validation": 0.574,
+        "gini_test": 0.558,
+        "gini_oot": 0.575,
+        "ks_train": 0.492,
+        "ks_validation": 0.507,
+        "ks_test": 0.474,
+        "ks_oot": 0.53
+      }
+    },
+    "credit_model_logreg_2025_12_01": {
+      "file": "credit_model_logreg_2025_12_01.pkl",
+      "algo": "logreg",
+      "model_train_date": "2025-12-01",
+      "trained_as_of": "2025-12-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.27522406250102177,
+      "results": {
+        "auc_train": 0.7526,
+        "auc_validation": 0.7433,
+        "auc_test": 0.7367,
+        "auc_oot": 0.7659,
+        "gini_train": 0.505,
+        "gini_validation": 0.487,
+        "gini_test": 0.473,
+        "gini_oot": 0.532,
+        "ks_train": 0.459,
+        "ks_validation": 0.437,
+        "ks_test": 0.428,
+        "ks_oot": 0.477
+      }
+    },
+    "credit_model_xgb_2025_12_01": {
+      "file": "credit_model_xgb_2025_12_01.pkl",
+      "algo": "xgb",
+      "model_train_date": "2025-12-01",
+      "trained_as_of": "2025-12-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Debt_per_Credit_Account",
+        "Annual_Income",
+        "Num_Fin_Pdts",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.29057562351226807,
+      "results": {
+        "auc_train": 0.7832,
+        "auc_validation": 0.7677,
+        "auc_test": 0.7671,
+        "auc_oot": 0.7775,
+        "gini_train": 0.566,
+        "gini_validation": 0.535,
+        "gini_test": 0.534,
+        "gini_oot": 0.555,
+        "ks_train": 0.499,
+        "ks_validation": 0.445,
+        "ks_test": 0.468,
+        "ks_oot": 0.489
+      }
+    },
+    "credit_model_logreg_2026_02_01": {
+      "file": "credit_model_logreg_2026_02_01.pkl",
+      "algo": "logreg",
+      "model_train_date": "2026-02-01",
+      "trained_as_of": "2026-02-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.3176768992292041,
+      "results": {
+        "auc_train": 0.7514,
+        "auc_validation": 0.7576,
+        "auc_test": 0.7663,
+        "auc_oot": 0.7795,
+        "gini_train": 0.503,
+        "gini_validation": 0.515,
+        "gini_test": 0.533,
+        "gini_oot": 0.559,
+        "ks_train": 0.451,
+        "ks_validation": 0.464,
+        "ks_test": 0.477,
+        "ks_oot": 0.49
+      }
+    },
+    "credit_model_xgb_2026_02_01": {
+      "file": "credit_model_xgb_2026_02_01.pkl",
+      "algo": "xgb",
+      "model_train_date": "2026-02-01",
+      "trained_as_of": "2026-02-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Debt_per_Credit_Account",
+        "Annual_Income",
+        "Num_Fin_Pdts",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.2705642580986023,
+      "results": {
+        "auc_train": 0.7981,
+        "auc_validation": 0.8024,
+        "auc_test": 0.7909,
+        "auc_oot": 0.8287,
+        "gini_train": 0.596,
+        "gini_validation": 0.605,
+        "gini_test": 0.582,
+        "gini_oot": 0.657,
+        "ks_train": 0.502,
+        "ks_validation": 0.506,
+        "ks_test": 0.511,
+        "ks_oot": 0.559
+      }
+    },
+    "credit_model_logreg_2026_04_01": {
+      "file": "credit_model_logreg_2026_04_01.pkl",
+      "algo": "logreg",
+      "model_train_date": "2026-04-01",
+      "trained_as_of": "2026-04-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.30825030503458045,
+      "results": {
+        "auc_train": 0.7526,
+        "auc_validation": 0.7584,
+        "auc_test": 0.78,
+        "auc_oot": 0.7555,
+        "gini_train": 0.505,
+        "gini_validation": 0.517,
+        "gini_test": 0.56,
+        "gini_oot": 0.511,
+        "ks_train": 0.451,
+        "ks_validation": 0.516,
+        "ks_test": 0.49,
+        "ks_oot": 0.438
+      }
+    },
+    "credit_model_xgb_2026_04_01": {
+      "file": "credit_model_xgb_2026_04_01.pkl",
+      "algo": "xgb",
+      "model_train_date": "2026-04-01",
+      "trained_as_of": "2026-04-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Debt_per_Credit_Account",
+        "Annual_Income",
+        "Num_Fin_Pdts",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.2325689047574997,
+      "results": {
+        "auc_train": 0.7987,
+        "auc_validation": 0.8058,
+        "auc_test": 0.8307,
+        "auc_oot": 0.7944,
+        "gini_train": 0.597,
+        "gini_validation": 0.612,
+        "gini_test": 0.661,
+        "gini_oot": 0.589,
+        "ks_train": 0.501,
+        "ks_validation": 0.523,
+        "ks_test": 0.56,
+        "ks_oot": 0.506
+      }
+    },
+    "credit_model_logreg_2026_06_01": {
+      "file": "credit_model_logreg_2026_06_01.pkl",
+      "algo": "logreg",
+      "model_train_date": "2026-06-01",
+      "trained_as_of": "2026-06-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.29662335509301263,
+      "results": {
+        "auc_train": 0.7528,
+        "auc_validation": 0.8018,
+        "auc_test": 0.756,
+        "auc_oot": 0.7566,
+        "gini_train": 0.506,
+        "gini_validation": 0.604,
+        "gini_test": 0.512,
+        "gini_oot": 0.513,
+        "ks_train": 0.453,
+        "ks_validation": 0.548,
+        "ks_test": 0.44,
+        "ks_oot": 0.467
+      }
+    },
+    "credit_model_xgb_2026_06_01": {
+      "file": "credit_model_xgb_2026_06_01.pkl",
+      "algo": "xgb",
+      "model_train_date": "2026-06-01",
+      "trained_as_of": "2026-06-01",
+      "features": [
+        "InterestRate_x_Debt",
+        "Delay_from_due_date",
+        "Num_Credit_Inquiries",
+        "Credit_History_Age_Years",
+        "Credit_Cards_imputed",
+        "Amount_invested_monthly",
+        "Age_imputed",
+        "Debt_per_Credit_Account",
+        "Annual_Income",
+        "Num_Fin_Pdts",
+        "Credit_Mix",
+        "Payment_of_Min_Amount",
+        "Payment_Behaviour_Imputed"
+      ],
+      "decision_threshold": 0.22903113067150116,
+      "results": {
+        "auc_train": 0.8002,
+        "auc_validation": 0.856,
+        "auc_test": 0.7975,
+        "auc_oot": 0.7935,
+        "gini_train": 0.6,
+        "gini_validation": 0.712,
+        "gini_test": 0.595,
+        "gini_oot": 0.587,
+        "ks_train": 0.5,
+        "ks_validation": 0.607,
+        "ks_test": 0.508,
+        "ks_oot": 0.503
+      }
+    }
+  },
+  "training_runs": [
+    {
+      "as_of": "2025-06-01",
+      "trigger": "manual",
+      "candidates": [
+        "credit_model_xgb_2025_06_01",
+        "credit_model_logreg_2025_06_01"
+      ],
+      "best_candidate": "credit_model_xgb_2025_06_01",
+      "gates": {
+        "min_gini_test": true,
+        "min_gini_oot": true,
+        "test_oot_gap": true,
+        "monotonicity_verified": true
+      },
+      "comparison": {
+        "candidate": "credit_model_xgb_2025_06_01",
+        "candidate_gini_oot": 0.575
+      },
+      "promoted": true,
+      "reason": "initial deployment"
+    },
+    {
+      "as_of": "2025-12-01",
+      "trigger": "manual",
+      "candidates": [
+        "credit_model_xgb_2025_12_01",
+        "credit_model_logreg_2025_12_01"
+      ],
+      "best_candidate": "credit_model_xgb_2025_12_01",
+      "gates": {
+        "min_gini_test": true,
+        "min_gini_oot": true,
+        "test_oot_gap": true,
+        "monotonicity_verified": true
+      },
+      "comparison": {
+        "candidate": "credit_model_xgb_2025_12_01",
+        "candidate_gini_oot": 0.555,
+        "champion": "credit_model_xgb_2025_06_01",
+        "champion_gini_same_oot": 0.5521,
+        "uplift": 0.0029
+      },
+      "promoted": true,
+      "reason": "promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "as_of": "2026-02-01",
+      "trigger": "manual",
+      "candidates": [
+        "credit_model_xgb_2026_02_01",
+        "credit_model_logreg_2026_02_01"
+      ],
+      "best_candidate": "credit_model_xgb_2026_02_01",
+      "gates": {
+        "min_gini_test": true,
+        "min_gini_oot": true,
+        "test_oot_gap": true,
+        "monotonicity_verified": true
+      },
+      "comparison": {
+        "candidate": "credit_model_xgb_2026_02_01",
+        "candidate_gini_oot": 0.657,
+        "champion": "credit_model_xgb_2025_12_01",
+        "champion_gini_same_oot": 0.6124,
+        "uplift": 0.0446
+      },
+      "promoted": true,
+      "reason": "promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "as_of": "2026-04-01",
+      "trigger": "manual",
+      "candidates": [
+        "credit_model_xgb_2026_04_01",
+        "credit_model_logreg_2026_04_01"
+      ],
+      "best_candidate": "credit_model_xgb_2026_04_01",
+      "gates": {
+        "min_gini_test": true,
+        "min_gini_oot": true,
+        "test_oot_gap": true,
+        "monotonicity_verified": true
+      },
+      "comparison": {
+        "candidate": "credit_model_xgb_2026_04_01",
+        "candidate_gini_oot": 0.589,
+        "champion": "credit_model_xgb_2026_02_01",
+        "champion_gini_same_oot": 0.5844,
+        "uplift": 0.0046
+      },
+      "promoted": true,
+      "reason": "promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "as_of": "2026-06-01",
+      "trigger": "manual",
+      "candidates": [
+        "credit_model_xgb_2026_06_01",
+        "credit_model_logreg_2026_06_01"
+      ],
+      "best_candidate": "credit_model_xgb_2026_06_01",
+      "gates": {
+        "min_gini_test": true,
+        "min_gini_oot": true,
+        "test_oot_gap": true,
+        "monotonicity_verified": true
+      },
+      "comparison": {
+        "candidate": "credit_model_xgb_2026_06_01",
+        "candidate_gini_oot": 0.587,
+        "champion": "credit_model_xgb_2026_04_01",
+        "champion_gini_same_oot": 0.5855,
+        "uplift": 0.0015
+      },
+      "promoted": true,
+      "reason": "promoted: passes gates and OOT Gini >= champion"
+    }
+  ],
+  "role_history": [
+    {
+      "effective_from": "2025-06-01",
+      "champion": "credit_model_xgb_2025_06_01",
+      "challenger": "credit_model_logreg_2025_06_01",
+      "reason": "manual refresh - initial deployment"
+    },
+    {
+      "effective_from": "2026-01-01",
+      "champion": "credit_model_xgb_2025_12_01",
+      "challenger": "credit_model_logreg_2025_12_01",
+      "reason": "manual refresh - promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "effective_from": "2026-03-01",
+      "champion": "credit_model_xgb_2026_02_01",
+      "challenger": "credit_model_logreg_2026_02_01",
+      "reason": "manual refresh - promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "effective_from": "2026-05-01",
+      "champion": "credit_model_xgb_2026_04_01",
+      "challenger": "credit_model_logreg_2026_04_01",
+      "reason": "manual refresh - promoted: passes gates and OOT Gini >= champion"
+    },
+    {
+      "effective_from": "2026-07-01",
+      "champion": "credit_model_xgb_2026_06_01",
+      "challenger": "credit_model_logreg_2026_06_01",
+      "reason": "manual refresh - promoted: passes gates and OOT Gini >= champion"
+    }
+  ],
+  "champion": "credit_model_xgb_2026_06_01",
+  "champion_file": "credit_model_xgb_2026_06_01.pkl",
+  "challenger": "credit_model_logreg_2026_06_01",
+  "updated_at": "2026-10-25T09:02:18"
+}
